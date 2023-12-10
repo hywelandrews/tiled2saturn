@@ -42,11 +42,7 @@ impl SaturnLayer {
         let tileset = tilesets.get(self.tileset_index as usize).expect(format!("Invalid tileset index {} for layer", self.tileset_index).as_str());
 
         // We sequentially reference tile ids based on the previous tilesets that exist in the map, this assumes you load tilesets in the same order
-        let mut current_tile_index : u16 = (0..self.tileset_index as usize).flat_map(|num| tilesets.get(num).map(|t| (t.tile_count + 1) as u16)).sum();
-
-        if tileset.bpp == 8 && current_tile_index > 0 {
-            current_tile_index += 1
-        }
+        let current_tile_index : u16 = (0..self.tileset_index as usize).flat_map(|num| tilesets.get(num).map(|t| (t.tile_count + 1) as u16)).sum();
 
         let nunber_of_tiles_per_map = match (tileset.tile_height, tileset.tile_width) {
             (16, 16) => Ok(32),
@@ -83,8 +79,11 @@ impl SaturnLayer {
                                 out_val |= 0x800;
                             }
                             
-                            //  current_tile_index - this is the tileset count we are currently at given all previous tilesets that exist
-                            out_val += current_tile_index; 
+                            //  current_tile_index - this is the tileset count we are currently at given all previous tilesets that exist - unless our tile is transparent, increment by index
+                            if tile_id > 0 {
+                                out_val += current_tile_index; 
+                            }
+                            
                             results.append(&mut out_val.to_be_bytes().to_vec());
                         } else {
                             let mut out_val = (in_val & 0x7fff) << 1;
@@ -152,13 +151,12 @@ impl SaturnLayer {
             return false;
         }
 
-        fn tile_transparency_enabled<'a>(height:u32, width:u32, previous_layers: impl Iterator<Item = &'a(u32,TileLayer<'a>)>, this_layer: &TileLayer) -> bool {
+        fn tile_transparency_enabled<'a>(height:u32, width:u32, previous_layers: impl Iterator<Item = &'a(u32,TileLayer<'a>)>) -> bool {
             for layer in previous_layers {
                 for y in 0..height {
                     for x in 0..width {
                         let previous_tile = layer.1.get_tile(x as i32,y as i32);
-                        let this_tile = this_layer.get_tile(x as i32,y as i32);
-                        if previous_tile.is_some() && this_tile.is_none(){
+                        if previous_tile.is_some() {
                             return true
                         }
                     }
@@ -181,7 +179,7 @@ impl SaturnLayer {
 
             let previous_layers = tile_layers.iter().take(index.saturating_sub(1));
 
-            let tile_transparency_enabled = tile_transparency_enabled(height, width, previous_layers, &tile_layer);
+            let tile_transparency_enabled = tile_transparency_enabled(height, width, previous_layers);
 
             let mut saturn_layer = SaturnLayer::new(id, width, height, tileset_index, tile_flip_enabled, tile_transparency_enabled)?;
 
