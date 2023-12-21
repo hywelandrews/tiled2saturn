@@ -42,7 +42,7 @@ impl SaturnLayer {
         let tileset = tilesets.get(self.tileset_index as usize).expect(format!("Invalid tileset index {} for layer", self.tileset_index).as_str());
 
         // We sequentially reference tile ids based on the previous tilesets that exist in the map, this assumes you load tilesets in the same order
-        let current_tile_index : u16 = (0..self.tileset_index as usize).flat_map(|num| tilesets.get(num).map(|t| (t.tile_count + 1) as u16)).sum();
+        let current_tile_index : u16 = (0..self.tileset_index as usize).flat_map(|num| tilesets.get(num).map(|t| (t.tile_count) as u16)).sum();
 
         let nunber_of_tiles_per_map = match (tileset.tile_height, tileset.tile_width) {
             (16, 16) => Ok(32),
@@ -61,15 +61,15 @@ impl SaturnLayer {
                 let end_x_offset   = (nunber_of_tiles_per_map * map_index_x) + nunber_of_tiles_per_map;
                 for y in start_y_offset..end_y_offset{
                     for x in start_x_offset..end_x_offset{
-                        let (tile_id, flip_horizontal, flip_vertical) = tile_layer.get_tile(x as i32,y as i32).map(|f| (f.id(), f.flip_h, f.flip_v)).unwrap_or((0, true, true));
-                        let in_val = tile_id.wrapping_sub(1);
+                        let (tile_id, flip_horizontal, flip_vertical) = tile_layer.get_tile(x as i32,y as i32).map(|f| (f.id(), f.flip_h, f.flip_v)).unwrap_or((u32::MAX, false, false));
+                        let in_val = tile_id;
                         if tileset.words_per_pallete == 1 {
                             let mut out_val =  if tileset.bpp == 8 {
                                     (in_val as u16 & 0x3ff) << 1
                                 } else if tileset.bpp == 4 {
                                     in_val as u16 & 0x3ff
                                 } else {0};
-
+                            
                             // is tile horizontally flipped?
                             if flip_horizontal {
                                 out_val |= 0x400;
@@ -80,7 +80,7 @@ impl SaturnLayer {
                             }
                             
                             //  current_tile_index - this is the tileset count we are currently at given all previous tilesets that exist - unless our tile is transparent, increment by index
-                            if tile_id > 0 {
+                            if tile_id != u32::MAX {
                                 out_val += current_tile_index; 
                             }
                             
