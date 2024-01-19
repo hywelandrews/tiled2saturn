@@ -7,6 +7,7 @@ use crate::saturn_map::SaturnMap;
 mod saturn_map;
 mod saturn_tileset;
 mod saturn_layer;
+mod saturn_collisions;
 
 use deku::prelude::*;
 

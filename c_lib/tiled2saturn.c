@@ -13,7 +13,7 @@
  * @brief Parse a byte stream to extract a Tiled2Saturn header.
  *
  * Parse a byte stream to extract the header information. The header contains various fields, 
- * including magic, version, width, height, tileset count, tileset offset, layer count, and layer offset. 
+ * including magic, version, width, height, tileset count, tileset offset, layer count, layer offset and collision offset. 
  * It performs validation checks on some fields and returns a dynamically allocated structure containing 
  * the parsed header data.
  *
@@ -29,14 +29,14 @@
  * @warning The caller must free the memory allocated for the parsed header structure to prevent memory leaks.
  */
 static tiled2saturn_header_t* parse_header(uint8_t* bytes){
-       // HEADER
+
     tiled2saturn_header_t* header = (tiled2saturn_header_t*)malloc(sizeof(tiled2saturn_header_t));
 
-    uint32_t magic = LONG(bytes, 0);//4 0-3
+    uint32_t magic = LONG(bytes, 0);  //4 0-3
     assert(magic == 0x894D4150);
     header->version = LONG(bytes, 4); //4 4-7 
-    assert(header->version == 1);
-    header->width = LONG(bytes, 8); //4 8-11
+    assert(header->version == 2);
+    header->width = LONG(bytes, 8);   //4 8-11
     assert((header->width % 8) == 0);
     header->height = LONG(bytes, 12); //4 12-15
     assert((header->height % 8) == 0);
@@ -48,6 +48,8 @@ static tiled2saturn_header_t* parse_header(uint8_t* bytes){
     assert(header->layer_count > 0);
     header->layer_offset = LONG(bytes, 22); //4 22-25
     assert(header->layer_offset > 0);
+    header->collision_offset = LONG(bytes, 26); //4 26-29
+    assert(header->collision_offset > 0);
     return header; 
 }
 
@@ -152,6 +154,57 @@ static tiled2saturn_layer_t* parse_layer(uint8_t* bytes, uint32_t offset, tiled2
 }
 
 /**
+ * @brief Parse a collision set from a byte stream.
+ *
+ * The function begins by dynamically allocating memory for an array of pointers to tiled2saturn_collision_t structures, with the number of elements equal to the size parameter.
+ *   It iterates over the byte array size times, parsing each collision and storing it in the allocated array.
+ *   Each collision includes:
+ *      collision_type: A byte value representing the type of collision.
+ *      collision_size: A 32-bit integer representing the size of the collision data.
+ *      point_count: A 32-bit integer representing the number of points in the collision.
+ *      points: An array of pointers to tiled2saturn_point_t structures representing the points of the collision.
+ *
+ * @param bytes A pointer to an array of bytes representing the collision data.
+ * @param offset: The starting position in the byte array from where the parsing should begin.
+ * @param size: The number of collisions to parse from the byte array.
+ *
+ * @return Returns a pointer to an array of pointers to tiled2saturn_collision_t structures, 
+ *         each representing a collision parsed from the byte array.
+ *
+ * @note The function is designed to be used in scenarios where collision data is stored in a compressed byte format and 
+ *       needs to be parsed into a structured format for further processing or analysis.
+ *
+ * @warning It is the caller's responsibility to ensure that the allocated memory is properly freed to avoid memory leaks.
+ */
+
+static tiled2saturn_collision_t** parse_collision(uint8_t* bytes, uint32_t offset, uint32_t size){
+    tiled2saturn_collision_t** collisions = (tiled2saturn_collision_t**)malloc(size * sizeof(tiled2saturn_collision_t*));
+    uint32_t collision_position = 0;
+    for(uint32_t i = 0; i<size; i++){
+        tiled2saturn_collision_t* collision = (tiled2saturn_collision_t*)malloc(sizeof(tiled2saturn_collision_t));
+        collision->collision_type = BYTE(bytes, collision_position+ offset); //1 1
+        assert(collision->collision_type >= 0 && collision->collision_type <= 3 );
+        collision->collision_size = LONG(bytes, collision_position + (offset+1)); // 4 2-5
+        assert(collision->collision_size > 0);
+        collision->point_count =  LONG(bytes, collision_position + (offset+5));   // 4 6-9
+        assert(collision->point_count <= 256);
+        collision->points = (tiled2saturn_point_t**)malloc(collision->point_count * sizeof(tiled2saturn_point_t*));
+        uint32_t point_position = 0;
+        for(uint8_t j = 0; j<collision->point_count;j++){
+            tiled2saturn_point_t* point = (tiled2saturn_point_t*)malloc(sizeof(tiled2saturn_point_t));
+            point->x = BYTE(bytes, collision_position + point_position + (offset+10)); // 1 10
+            point->y = BYTE(bytes, collision_position + point_position + (offset+11)); // 1 11
+            collision->points[j] = point;
+            point_position+=2;
+        }
+        collisions[i] = collision;
+        collision_position += collision->collision_size;
+    }
+
+    return collisions;
+}
+
+/**
  * @brief Parse a Tiled2Saturn map from a byte stream.
  *
  * This function parses a Tiled2Saturn map from a byte stream, including its header, tilesets, and layers.
@@ -171,8 +224,9 @@ static tiled2saturn_layer_t* parse_layer(uint8_t* bytes, uint32_t offset, tiled2
  * @warning The caller must free the memory allocated for the parsed map, including header, tilesets, and layers,
  *          to prevent memory leaks. Use `free_tiled2saturn(tiled2saturn_t*)` to properly deallocate all resources.
  */
+
 tiled2saturn_t* tiled2saturn_parse(uint8_t* bytes) {
-    tiled2saturn_t* saturn_map = (tiled2saturn_t*)malloc(sizeof(tiled2saturn_t*));
+    tiled2saturn_t* saturn_map = (tiled2saturn_t*)malloc(sizeof(tiled2saturn_t));
     saturn_map->header = parse_header(bytes);
     
     size_t tileset_offset = saturn_map->header->tileset_offset;
@@ -188,6 +242,10 @@ tiled2saturn_t* tiled2saturn_parse(uint8_t* bytes) {
         saturn_map->layers[i] = parse_layer(bytes, layer_offset, saturn_map->tilesets);
         layer_offset += saturn_map->layers[i]->layer_size;
     }
+
+    size_t collision_offset = saturn_map->header->collision_offset;
+    uint32_t count = saturn_map->header->width * saturn_map->header->height;
+    saturn_map->collisions =  parse_collision(bytes, collision_offset, count);
 
     return saturn_map;
 }
@@ -205,6 +263,14 @@ tiled2saturn_t* tiled2saturn_parse(uint8_t* bytes) {
  *
  */
 void tiled2saturn_free(tiled2saturn_t* tiled2saturn){
+    for (uint32_t i = 0; i < (tiled2saturn->header->width*tiled2saturn->header->height); i++) {
+        for(uint8_t j = 0; j<tiled2saturn->collisions[i]->point_count; j++){
+            free(tiled2saturn->collisions[i]->points[j]);
+        }
+        
+        free(tiled2saturn->collisions[i]);
+    }
+
     for (uint8_t i = 0; i < tiled2saturn->header->layer_count; i++) {
         free(tiled2saturn->layers[i]->pattern_name_data);
         free(tiled2saturn->layers[i]);

@@ -9,7 +9,7 @@ use crate::saturn_tileset::SaturnTileset;
 pub struct SaturnLayer{
     id: u32,
     #[deku(update = "self.to_bytes().unwrap().len()")]
-    layer_size: u32,
+    pub layer_size: u32,
     width: u32,
     height: u32,
     tileset_index: u16,

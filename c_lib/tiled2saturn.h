@@ -10,6 +10,7 @@ typedef struct tiled2saturn_header {
     size_t tileset_offset;
     uint8_t layer_count;
     size_t layer_offset;
+    size_t collision_offset;
 } tiled2saturn_header_t;
 
 typedef struct tiled2saturn_tileset {
@@ -38,10 +39,28 @@ typedef struct tiled2saturn_layer {
     tiled2saturn_tileset_t* tileset;
 } tiled2saturn_layer_t;
 
+typedef struct tiled2saturn_point{
+    uint8_t x, y;
+} tiled2saturn_point_t;
+
+typedef enum {
+    EMPTY = 0,
+    RECT = 1,
+    POLY = 2
+} tiled2saturn_collision_type_t;
+
+typedef struct tiled2saturn_collision{
+    tiled2saturn_collision_type_t collision_type;
+    uint32_t collision_size;
+    tiled2saturn_point_t** points;
+    uint32_t point_count;
+} tiled2saturn_collision_t;
+
 typedef struct tiled2saturn {
-    tiled2saturn_header_t*  header;
-    tiled2saturn_tileset_t** tilesets;
-    tiled2saturn_layer_t**   layers;
+    tiled2saturn_header_t*      header;
+    tiled2saturn_tileset_t**    tilesets;
+    tiled2saturn_layer_t**      layers;
+    tiled2saturn_collision_t**  collisions;
 } tiled2saturn_t;
 
 tiled2saturn_t* tiled2saturn_parse(uint8_t* raw_bytes);

@@ -57,11 +57,33 @@ To get started, you can either include the library in your C project or build an
 
 Include the Library: Copy the Tiled2Saturn files from c_lib/ into your project by adding the tiled2saturn.h header file and including the c source in your build file.
 
+```#include "tiled2saturn.h"```
+
 Parse Tiled2Saturn Map: Use the library to parse Tiled2Saturn map data by calling the tiled2saturn_parse function. This function returns a data structure containing the parsed map, including header, tilesets, and layers.
 
-Access and Manipulate Data: Access and manipulate the parsed map data as needed for your application. You can retrieve layers by their IDs, access tilesets, and more.
+```
+uint8_t* level; // pointer to raw data.bin
+tiled2saturn_t* t2s = tiled2saturn_parse(level);
 
+const uint8_t moon_layer_id = 1;
+const uint8_t clouds_layer_id = 2;
+const uint8_t floor_layer_id = 3;
+```
+Access and Manipulate Data: Access and manipulate the parsed map data as needed for your application. You can retrieve layers by their IDs, access tilesets, and more.
+```
+// Load Moon background
+tiled2saturn_layer_t* moon = get_layer_by_id(t2s, moon_layer_id);
+// Load Clouds background
+tiled2saturn_layer_t* clouds = get_layer_by_id(t2s, clouds_layer_id);
+// Load Floor background
+tiled2saturn_layer_t* floor = get_layer_by_id(t2s, floor_layer_id);
+// Use collision data extracted from Tiled
+parse_collisions(t2s->collisions);
+```
 Cleanup Resources: When you're done with the parsed data, be sure to free the memory allocated for the map and its components using the tiled2saturn_free function to avoid memory leaks.
+```
+tiled2saturn_free(t2s);
+```
 
 License
 -------
