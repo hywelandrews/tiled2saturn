@@ -2,6 +2,7 @@
 target/
 .vscode/
 Cargo.lock
+build/
 *.tmx
 *.tsx
 *.bin

@@ -19,7 +19,7 @@ To use tiled2saturn, you need to build the program from source:
 
 1.  Clone the repository:
 
-    `git clone https://github.com/your-username/tiled2saturn.git`
+    `git clone https://github.com/hywelandrews/tiled2saturn.git`
 
 2.  Change your working directory to the tiled2saturn project folder:
 
@@ -42,26 +42,55 @@ tiled2saturn provides a command-line interface with a single subcommand "extract
 
 ### Options
 
--   `-w, --WORDS <WORDS>`: Pallete word size (Required). The number of words to represent the palette.
+-   `-w, --WORDS <WORDS>`: Palette word size (Required). The number of words to represent the palette.
 
 ### Example
 
-`tiled2saturn extract -w 1 path/to/map.tmx`
+```bash
+tiled2saturn extract -w 1 path/to/map.tmx
+```
 
 This command will extract the components of the specified Tiled map and convert them into a single binary representation suitable for Sega Saturn. The resulting binary file will be named "data.bin" in the current working directory.
 
 Getting Started with the C library
 ----------------------------------
 
-To get started, you can either include the library in your C project or build an application that uses the library. Here are the basic steps to get started:
+You can either include the library in your project or install globally in your framework, only [Yaul](https://www.yaul.org) is supported currently. Here are the basic steps to get started:
 
-Include the Library: Copy the Tiled2Saturn files from c_lib/ into your project by adding the tiled2saturn.h header file and including the c source in your build file.
+### Manual installation
 
-```#include "tiled2saturn.h"```
+Copy the Tiled2Saturn files from libtiled2saturn/ into your project, adding both tiled2saturn.h and tiled2saturn.c. Your Makefile will need to include tiled2saturn.c in its SRCs. You can then include tiled2saturn locally. 
 
-Parse Tiled2Saturn Map: Use the library to parse Tiled2Saturn map data by calling the tiled2saturn_parse function. This function returns a data structure containing the parsed map, including header, tilesets, and layers.
-
+```C
+#include "tiled2saturn.h"
 ```
+
+### Yaul installation
+
+Alternatively run `make install` from the libtiled2saturn directory with elevated privileges in a yaul environment.
+
+```C
+#include <tiled2saturn/tiled2saturn.h>
+```
+
+You will also need to include the shared build file in your Makefile
+
+```Makefile
+include $(YAUL_INSTALL_ROOT)/share/build.tiled2saturn.mk
+```
+
+And append the CFLAGS and LDFLAGS to yours
+
+```Makefile
+   SH_CFLAGS+= $(TILED2SATURN_CFLAGS)
+   SH_LDFLAGS+= $(TILED2SATURN_LDFLAGS)
+```
+
+### Usage
+
+Use the library to parse Tiled2Saturn map data by calling the tiled2saturn_parse function. This function returns a data structure containing the parsed map, including header, tilesets, and layers.
+
+```C
 uint8_t* level; // pointer to raw data.bin
 tiled2saturn_t* t2s = tiled2saturn_parse(level);
 
@@ -70,7 +99,7 @@ const uint8_t clouds_layer_id = 2;
 const uint8_t floor_layer_id = 3;
 ```
 Access and Manipulate Data: Access and manipulate the parsed map data as needed for your application. You can retrieve layers by their IDs, access tilesets, and more.
-```
+```C
 // Load Moon background
 tiled2saturn_layer_t* moon = get_layer_by_id(t2s, moon_layer_id);
 // Load Clouds background
@@ -81,7 +110,7 @@ tiled2saturn_layer_t* floor = get_layer_by_id(t2s, floor_layer_id);
 parse_collisions(t2s->collisions);
 ```
 Cleanup Resources: When you're done with the parsed data, be sure to free the memory allocated for the map and its components using the tiled2saturn_free function to avoid memory leaks.
-```
+```C
 tiled2saturn_free(t2s);
 ```
 
