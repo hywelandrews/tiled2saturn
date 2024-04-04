@@ -1,9 +1,11 @@
 /target
 target/
 .vscode/
+.cache/
 Cargo.lock
 build/
-*.tmx
-*.tsx
-*.bin
-*.bmp
+
+compile_commands.json
+**/*.[Bb][Ii][Nn]
+*.cue
+*.iso

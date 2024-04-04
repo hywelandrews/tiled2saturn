@@ -129,20 +129,20 @@ static tiled2saturn_layer_t* parse_layer(uint8_t* bytes, uint32_t offset, tiled2
     tiled2saturn_layer_t* layer = (tiled2saturn_layer_t*)malloc(sizeof(tiled2saturn_layer_t));
     layer->id = LONG(bytes, offset); //4 52-55
     assert(layer->id != 0);
-    layer->layer_size = LONG(bytes, offset+4); //4 52-55
+    layer->layer_size = LONG(bytes, offset+4); //4 56-59
     assert(layer->layer_size > 0);
-    layer->layer_width = LONG(bytes, offset+8); //4 56-59
+    layer->layer_width = LONG(bytes, offset+8); //4 60-63
     assert(layer->layer_width > 0);
-    layer->layer_height = LONG(bytes, offset+12); //4 60-63
+    layer->layer_height = LONG(bytes, offset+12); //4 64-67
     assert(layer->layer_height > 0);
-    uint16_t tileset_index = SHORT(bytes, offset+16); //2 63-64
+    uint16_t tileset_index = SHORT(bytes, offset+16); //2 68-69
 
-    layer->tile_flip_enabled = BYTE(bytes, offset+18); //1 65
+    layer->tile_flip_enabled = BYTE(bytes, offset+18); //1 70
     assert(layer->tile_flip_enabled < 2);
-    layer->tile_transparency_enabled = BYTE(bytes, offset+19); //1 65
+    layer->tile_transparency_enabled = BYTE(bytes, offset+19); //4 71-74
     assert(layer->tile_transparency_enabled < 2);
     
-    layer->pattern_name_data_size = LONG(bytes, offset+20); //4 66-69
+    layer->pattern_name_data_size = LONG(bytes, offset+20); //4 75-78
     assert(layer->pattern_name_data_size > 0);
 
     layer->pattern_name_data = (uint8_t*)malloc(layer->pattern_name_data_size);

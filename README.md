@@ -10,7 +10,7 @@ Prerequisites
 
 Before using tiled2saturn, make sure you have the following prerequisites installed on your system:
 
--   Rust: You can download and install Rust from <https://www.rust-lang.org/tools/install>.
+-   Rust > 1.74: You can download and install Rust from <https://www.rust-lang.org/tools/install>.
 
 Installation
 ------------
@@ -113,6 +113,8 @@ Cleanup Resources: When you're done with the parsed data, be sure to free the me
 ```C
 tiled2saturn_free(t2s);
 ```
+
+Full examples for single and multiple layers can be found [here](https://github.com/hywelandrews/tiled2saturn/tree/master/examples).
 
 License
 -------
