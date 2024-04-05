@@ -66,14 +66,14 @@ int main(void)
          };
 
          const vdp2_vram_cycp_t vram_cycp = {
-                .pt[0].t0 = VDP2_VRAM_CYCP_CHPNDR_NBG0,
-                .pt[0].t1 = VDP2_VRAM_CYCP_CHPNDR_NBG0,
-                .pt[0].t2 = VDP2_VRAM_CYCP_CHPNDR_NBG1,
-                .pt[0].t3 = VDP2_VRAM_CYCP_CHPNDR_NBG1,
-                .pt[0].t4 = VDP2_VRAM_CYCP_CHPNDR_NBG2,
-                .pt[0].t5 = VDP2_VRAM_CYCP_CHPNDR_NBG2,
-                .pt[0].t6 = VDP2_VRAM_CYCP_CHPNDR_NBG3,
-                .pt[0].t7 = VDP2_VRAM_CYCP_CHPNDR_NBG3,
+                .pt[0].t0 = VDP2_VRAM_CYCP_CHPNDR_NBG2,
+                .pt[0].t1 = VDP2_VRAM_CYCP_CHPNDR_NBG2,
+                .pt[0].t2 = VDP2_VRAM_CYCP_CHPNDR_NBG3,
+                .pt[0].t3 = VDP2_VRAM_CYCP_CHPNDR_NBG3,
+                .pt[0].t4 = VDP2_VRAM_CYCP_CHPNDR_NBG0,
+                .pt[0].t5 = VDP2_VRAM_CYCP_CHPNDR_NBG0,
+                .pt[0].t6 = VDP2_VRAM_CYCP_CHPNDR_NBG1,
+                .pt[0].t7 = VDP2_VRAM_CYCP_CHPNDR_NBG1,
 
                 .pt[1].t0 = VDP2_VRAM_CYCP_PNDR_NBG0,
                 .pt[1].t1 = VDP2_VRAM_CYCP_PNDR_NBG0,

@@ -47,7 +47,7 @@ int main(void)
 
          const vdp2_vram_cycp_t vram_cycp = {
                 .pt[0].t0 = VDP2_VRAM_CYCP_CHPNDR_NBG0,
-                .pt[0].t1 = VDP2_VRAM_CYCP_CHPNDR_NBG0,
+                .pt[0].t1 = VDP2_VRAM_CYCP_NO_ACCESS,
                 .pt[0].t2 = VDP2_VRAM_CYCP_NO_ACCESS,
                 .pt[0].t3 = VDP2_VRAM_CYCP_NO_ACCESS,
                 .pt[0].t4 = VDP2_VRAM_CYCP_NO_ACCESS,
@@ -56,7 +56,7 @@ int main(void)
                 .pt[0].t7 = VDP2_VRAM_CYCP_NO_ACCESS,
 
                 .pt[1].t0 = VDP2_VRAM_CYCP_PNDR_NBG0,
-                .pt[1].t1 = VDP2_VRAM_CYCP_PNDR_NBG0,
+                .pt[1].t1 = VDP2_VRAM_CYCP_NO_ACCESS,
                 .pt[1].t2 = VDP2_VRAM_CYCP_NO_ACCESS,
                 .pt[1].t3 = VDP2_VRAM_CYCP_NO_ACCESS,
                 .pt[1].t4 = VDP2_VRAM_CYCP_NO_ACCESS,
@@ -90,8 +90,6 @@ int main(void)
         scu_dma_transfer(0, (void *)NBGX_PAL, t2s->tilesets[0]->palette, t2s->tilesets[0]->palette_size);
         scu_dma_transfer(0, (void *)NBG0_MAP, t2s->layers[0]->pattern_name_data, t2s->layers[0]->pattern_name_data_size);
         scu_dma_transfer(0, (void *)NBGX_CPD, t2s->tilesets[0]->character_pattern, t2s->tilesets[0]->character_pattern_size);
-
-        (void)memset((void *)(NBGX_MAP_EMPTY), 0X3FF, 0x800);
         
         vdp2_scrn_cell_format_set(&nbg0_format, &nbg0_normal_map);
 
@@ -101,7 +99,7 @@ int main(void)
         vdp2_scrn_scroll_y_set(VDP2_SCRN_NBG0, FIX16(224.0f/2));
 
         vdp2_scrn_disp_t disp_mask;
-        disp_mask = VDP2_SCRN_DISPTP_NBG0;
+        disp_mask = VDP2_SCRN_DISP_NBG0;
 
         vdp2_scrn_display_set(disp_mask);
 
