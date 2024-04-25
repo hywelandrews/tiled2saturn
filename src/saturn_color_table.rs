@@ -1,5 +1,3 @@
-use core::convert::TryInto;
-
 use embedded_graphics::{
     pixelcolor::{raw::RawU24, Rgb888},
     prelude::*,
@@ -41,8 +39,6 @@ impl<'a> SaturnColorTable {
 
         let offset = index as usize;
         let raw = self.data.get(offset)?;
-
-        //let raw = u32::from_le_bytes(bytes.try_into().unwrap());
 
         Some(RawU24::from_u32(*raw).into())
     }

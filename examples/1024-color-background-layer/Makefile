@@ -17,7 +17,7 @@ SH_SRCS:= \
 
 # We explicitly set the sh2 root header files to help clang generation
 SH_CFLAGS+= -I$(YAUL_INSTALL_ROOT)/$(YAUL_ARCH_SH_PREFIX)/include
-SH_CFLAGS+= -Os -I. $(TILED2SATURN_CFLAGS)
+SH_CFLAGS+= -O3 -I. $(TILED2SATURN_CFLAGS)
 SH_LDFLAGS+= $(TILED2SATURN_LDFLAGS)
 
 IP_VERSION:= V1.000

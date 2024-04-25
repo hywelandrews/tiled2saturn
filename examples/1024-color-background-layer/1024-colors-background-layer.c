@@ -1,7 +1,9 @@
 #include "gamemath/defs.h"
 #include "gamemath/fix16.h"
 #include "gamemath/fix16/fix16_vec2.h"
+#include "vdp2/cram.h"
 #include "vdp2/scrn_macros.h"
+#include "vdp2/scrn_shared.h"
 #include <stdint.h>
 #include <yaul.h>
 
@@ -11,7 +13,7 @@
 #include <tiled2saturn/tiled2saturn.h>
 
 #define NBGX_CPD         VDP2_VRAM_ADDR(0, 0x000000)
-#define NBGX_PAL         VDP2_CRAM_MODE_1_OFFSET(0, 0, 0)
+#define NBGX_PAL         VDP2_CRAM_MODE_0_OFFSET(0, 0, 0)
 
 #define NBG0_MAP         VDP2_VRAM_ADDR(1, 0x000000)
 #define NBGX_MAP_EMPTY   VDP2_VRAM_ADDR(1, 0x002000) 
@@ -29,7 +31,7 @@ int main(void)
 {
         vdp2_scrn_cell_format_t nbg0_format = {
                 .scroll_screen = VDP2_SCRN_NBG0,
-                .ccc           = VDP2_SCRN_CCC_PALETTE_16,
+                .ccc           = VDP2_SCRN_CCC_PALETTE_2048,
                 .char_size     = VDP2_SCRN_CHAR_SIZE_2X2,
                 .pnd_size      = 1,
                 .aux_mode      = VDP2_SCRN_AUX_MODE_1,
@@ -47,18 +49,18 @@ int main(void)
 
          const vdp2_vram_cycp_t vram_cycp = {
                 .pt[0].t0 = VDP2_VRAM_CYCP_CHPNDR_NBG0,
-                .pt[0].t1 = VDP2_VRAM_CYCP_NO_ACCESS,
-                .pt[0].t2 = VDP2_VRAM_CYCP_NO_ACCESS,
-                .pt[0].t3 = VDP2_VRAM_CYCP_NO_ACCESS,
+                .pt[0].t1 = VDP2_VRAM_CYCP_CHPNDR_NBG0,
+                .pt[0].t2 = VDP2_VRAM_CYCP_CHPNDR_NBG0,
+                .pt[0].t3 = VDP2_VRAM_CYCP_CHPNDR_NBG0,
                 .pt[0].t4 = VDP2_VRAM_CYCP_NO_ACCESS,
                 .pt[0].t5 = VDP2_VRAM_CYCP_NO_ACCESS,
                 .pt[0].t6 = VDP2_VRAM_CYCP_NO_ACCESS,
                 .pt[0].t7 = VDP2_VRAM_CYCP_NO_ACCESS,
 
                 .pt[1].t0 = VDP2_VRAM_CYCP_PNDR_NBG0,
-                .pt[1].t1 = VDP2_VRAM_CYCP_NO_ACCESS,
-                .pt[1].t2 = VDP2_VRAM_CYCP_NO_ACCESS,
-                .pt[1].t3 = VDP2_VRAM_CYCP_NO_ACCESS,
+                .pt[1].t1 = VDP2_VRAM_CYCP_PNDR_NBG0,
+                .pt[1].t2 = VDP2_VRAM_CYCP_PNDR_NBG0,
+                .pt[1].t3 = VDP2_VRAM_CYCP_PNDR_NBG0,
                 .pt[1].t4 = VDP2_VRAM_CYCP_NO_ACCESS,
                 .pt[1].t5 = VDP2_VRAM_CYCP_NO_ACCESS,
                 .pt[1].t6 = VDP2_VRAM_CYCP_NO_ACCESS,
@@ -86,17 +88,16 @@ int main(void)
         vdp2_vram_cycp_set(&vram_cycp);
 
         tiled2saturn_t* t2s = tiled2saturn_parse(layer1);
-        
+
         scu_dma_transfer(0, (void *)NBGX_PAL, t2s->tilesets[0]->palette, t2s->tilesets[0]->palette_size);
         scu_dma_transfer(0, (void *)NBG0_MAP, t2s->layers[0]->pattern_name_data, t2s->layers[0]->pattern_name_data_size);
         scu_dma_transfer(0, (void *)NBGX_CPD, t2s->tilesets[0]->character_pattern, t2s->tilesets[0]->character_pattern_size);
         
+        (void)memset((void *)(NBGX_MAP_EMPTY), 0x101 << 2, 0x800);
+
         vdp2_scrn_cell_format_set(&nbg0_format, &nbg0_normal_map);
 
         vdp2_scrn_priority_set(VDP2_SCRN_NBG0, 7);
-
-        vdp2_scrn_scroll_x_set(VDP2_SCRN_NBG0, FIX16(320.0f/2));
-        vdp2_scrn_scroll_y_set(VDP2_SCRN_NBG0, FIX16(224.0f/2));
 
         vdp2_scrn_disp_t disp_mask;
         disp_mask = VDP2_SCRN_DISP_NBG0;
@@ -105,8 +106,6 @@ int main(void)
 
         vdp2_sync();
         vdp2_sync_wait();
-
-        vdp2_tvmd_display_set();
 
         fix16_vec2_t pos = FIX16_VEC2_INITIALIZER(0.0f, 0.0f);
 
@@ -159,7 +158,11 @@ void user_init(void)
 
         vdp_sync_vblank_out_set(_vblank_out_handler, NULL);
 
+        vdp2_cram_mode_set(0);
+
         smpc_peripheral_init();
+
+        vdp2_tvmd_display_set();
 }
 
 static void _vblank_out_handler(void *work __unused)

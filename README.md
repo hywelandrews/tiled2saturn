@@ -1,9 +1,18 @@
 tiled2saturn
 ============
 
-tiled2saturn is a converter between Tiled generated maps and Sega Saturn formats. This tool allows you to extract all components of a Tiled map (.tmx) and convert them into a single binary representation compatible with Sega Saturn.
+tiled2saturn converts between Tiled generated maps and Sega Saturn formats. This tool allows you to extract all components of a Tiled map (.tmx) and convert them into a single binary representation which can be parsed for use in Sega Saturn games.
 
-There is also a C library that provides functionality to parse and manipulate Tiled2Saturn map data. The library allows you to extract header information, tilesets, and layers from Tiled2Saturn maps, as well as search for layers by their IDs.
+A C library provides functionality to parse and manipulate Tiled2Saturn map data. The library allows you to easily read  header, tilesets, layers and collision data from Tiled maps.
+
+Supported Features
+------------------
+
+- BMP images in both indexed and raster formats
+- 4, 8, 11 BPP
+- Horizontal/Vertical Tile Flip
+- Tile Transparency detected based on underlying layers
+- RGB555 and RGB888 palette formats
 
 Prerequisites
 -------------
@@ -34,7 +43,7 @@ The tiled2saturn binary will be located in the "target/release" directory and ca
 Usage
 -----
 
-tiled2saturn provides a command-line interface with a single subcommand "extract" to convert Tiled maps into Sega Saturn format. Here's how to use the program:
+tiled2saturn provides a command-line interface with a single subcommand "extract" to convert Tiled maps into a Sega Saturn format. Here's how to use the program:
 
 `tiled2saturn extract [OPTIONS] <TMX_FILE>`
 
@@ -50,7 +59,7 @@ tiled2saturn provides a command-line interface with a single subcommand "extract
 tiled2saturn extract -w 1 path/to/map.tmx
 ```
 
-This command will extract the components of the specified Tiled map and convert them into a single binary representation suitable for Sega Saturn. The resulting binary file will be named "data.bin" in the current working directory.
+This command will extract the components of the specified Tiled map and convert them into a single binary representation. The resulting binary file will be named "data.bin" in the current working directory.
 
 Getting Started with the C library
 ----------------------------------
@@ -59,7 +68,7 @@ You can either include the library in your project or install globally in your f
 
 ### Manual installation
 
-Copy the Tiled2Saturn files from libtiled2saturn/ into your project, adding both tiled2saturn.h and tiled2saturn.c. Your Makefile will need to include tiled2saturn.c in its SRCs. You can then include tiled2saturn locally. 
+Copy the Tiled2Saturn files from libtiled2saturn/ into your project, adding both `tiled2saturn.h` and `tiled2saturn.c`. Your Makefile will need to include `tiled2saturn.c` in its `SRCs`. You can then include tiled2saturn locally. 
 
 ```C
 #include "tiled2saturn.h"
@@ -88,7 +97,7 @@ And append the CFLAGS and LDFLAGS to yours
 
 ### Usage
 
-Use the library to parse Tiled2Saturn map data by calling the tiled2saturn_parse function. This function returns a data structure containing the parsed map, including header, tilesets, and layers.
+Use the library to parse Tiled2Saturn map data by calling the tiled2saturn_parse function. This function returns a data structure containing the parsed map, including a header, tilesets, and layers.
 
 ```C
 uint8_t* level; // pointer to raw data.bin

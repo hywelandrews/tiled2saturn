@@ -55,7 +55,6 @@ impl SaturnTileset {
                 }
                 let index = ((rows * (y + tile_y)) + (x + tile_x)) as usize;
                 let value = raw_image.get(index).map(|p| *p);
-
                 result.insert((y * 8 + x) as usize, value.ok_or(format!("No pixel value found at {} {}", (x + tile_x), (y + tile_y)))? as u16);
             }
         }
@@ -110,7 +109,7 @@ impl SaturnTileset {
                                 }
                             }
                             11 => {
-                                for i in 0..32 {
+                                for i in 0..64 {
                                     results.push(((pixel_data[i] >> 8) & 0x7) as u8);
                                     results.push(pixel_data[i] as u8)
                                 }
@@ -150,7 +149,7 @@ impl SaturnTileset {
                                 }
                             }
                             11 => {
-                                for i in 0..128 {
+                                for i in 0..256 {
                                     results.push(((res[i] >> 8) & 0x7) as u8);
                                     results.push(res[i] as u8);
                                 }
