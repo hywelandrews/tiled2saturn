@@ -64,7 +64,9 @@ impl SaturnLayer {
                         let (tile_id, flip_horizontal, flip_vertical) = tile_layer.get_tile(x as i32,y as i32).map(|f| (f.id(), f.flip_h, f.flip_v)).unwrap_or((u32::MAX, false, false));
                         let in_val = tile_id;
                         if tileset.words_per_pallete == 1 {
-                            let mut out_val =  if tileset.bpp == 8 {
+                            let mut out_val = if tileset.bpp == 11{
+                                    (in_val as u16 & 0x3ff) << 2
+                                } else if tileset.bpp == 8 {
                                     (in_val as u16 & 0x3ff) << 1
                                 } else if tileset.bpp == 4 {
                                     in_val as u16 & 0x3ff

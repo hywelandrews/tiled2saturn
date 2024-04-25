@@ -84,11 +84,11 @@ static tiled2saturn_tileset_t* parse_tileset(uint8_t* bytes, uint32_t offset){
     tileset->tile_count = LONG(bytes, offset + 12); //4 37-40
     assert(tileset->tile_count > 0);
     tileset->bpp = SHORT(bytes, offset + 16); //2 41-42
-    assert(tileset->bpp == 4 || tileset->bpp == 8);
+    assert(tileset->bpp == 4 || tileset->bpp == 8 || tileset->bpp == 11);
     tileset->words_per_palette = BYTE(bytes, offset + 18); //1 43
     assert(tileset->words_per_palette == 1 || tileset->words_per_palette == 2);
     tileset->number_of_colors = SHORT(bytes, offset + 19); //2 44-45
-    assert(tileset->number_of_colors == 16 || tileset->number_of_colors == 256 || tileset->number_of_colors == 2048);
+    assert(tileset->number_of_colors == 16 || tileset->number_of_colors == 256 || tileset->number_of_colors == 1024 || tileset->number_of_colors == 2048);
 
     tileset->palette_size = LONG(bytes, offset + 21); //4 44-47
     assert(tileset->palette_size > 0);
