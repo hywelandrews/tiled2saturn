@@ -35,7 +35,7 @@ static tiled2saturn_header_t* parse_header(uint8_t* bytes){
     uint32_t magic = LONG(bytes, 0);  //4 0-3
     assert(magic == 0x894D4150);
     header->version = LONG(bytes, 4); //4 4-7 
-    assert(header->version == 2);
+    assert(header->version == 3);
     header->width = LONG(bytes, 8);   //4 8-11
     assert((header->width % 8) == 0);
     header->height = LONG(bytes, 12); //4 12-15
@@ -48,7 +48,11 @@ static tiled2saturn_header_t* parse_header(uint8_t* bytes){
     assert(header->layer_count > 0);
     header->layer_offset = LONG(bytes, 22); //4 22-25
     assert(header->layer_offset > 0);
-    header->collision_offset = LONG(bytes, 26); //4 26-29
+    header->bitmap_layer_count = BYTE(bytes, 26); //1 26
+    assert(header->bitmap_layer_count > 0);
+    header->bitmap_layer_offset = LONG(bytes, 27); //4 27-30
+    assert(header->bitmap_layer_offset > 0);
+    header->collision_offset = LONG(bytes, 31); // 4 31 - 34
     assert(header->collision_offset > 0);
     return header; 
 }
@@ -154,6 +158,47 @@ static tiled2saturn_layer_t* parse_layer(uint8_t* bytes, uint32_t offset, tiled2
 }
 
 /**
+ * @brief Parse a bitmap layer from a byte stream.
+ *
+ * This function parses a butmap layer from a byte stream, extracting various properties of the layer,
+ * including its ID, size, dimensions, and bitmap data. It performs validation checks on
+ * some fields and returns a dynamically allocated `tiled2saturn_bitmap_layer_t` structure containing the
+ * parsed layer data.
+ *
+ * @param bytes Pointer to the byte stream containing the bitmap layer data.
+ * @param offset The offset in the byte stream where the bitmap layer data begins.
+ * 
+ * @return A dynamically allocated `tiled2saturn_bitmap_layer_t` structure containing the parsed bitmap layer.
+ *         The caller is responsible for freeing this memory when it is no longer needed using `free()`.
+ *
+ * @note This function expects a well-formed byte stream with a specific structure, and it assumes
+ *       the input adheres to the Tiled2Saturn layer format. Malformed or incorrect data may lead to
+ *       assertion failures or undefined behavior.
+ *
+ * @warning The caller must free the memory allocated for the parsed layer structure to prevent memory leaks.
+ *
+ */
+static tiled2saturn_bitmap_layer_t* parse_bitmap_layer(uint8_t* bytes, uint32_t offset){
+    tiled2saturn_bitmap_layer_t* bitmap_layer = (tiled2saturn_bitmap_layer_t*)malloc(sizeof(tiled2saturn_bitmap_layer_t));
+    bitmap_layer->id = LONG(bytes, offset); // 35 - 38
+    assert(bitmap_layer->id != 0);
+    bitmap_layer->layer_size = LONG(bytes, offset+4); // 39 - 42
+    assert(bitmap_layer->layer_size > 0);
+    bitmap_layer->layer_width = LONG(bytes, offset+8); // 43 - 46
+    assert(bitmap_layer->layer_width > 0);
+    bitmap_layer->layer_height = LONG(bytes, offset+12); // 47 - 50  
+    assert(bitmap_layer->layer_height > 0);
+  
+    bitmap_layer->bitmap_size = LONG(bytes, offset+16); // 51 - 54
+    assert(bitmap_layer->bitmap_size > 0);
+
+    bitmap_layer->bitmap = (uint8_t*)malloc(bitmap_layer->bitmap_size);
+    memcpy(bitmap_layer->bitmap, bytes+offset+20, bitmap_layer->bitmap_size);
+
+    return bitmap_layer;
+}
+
+/**
  * @brief Parse a collision set from a byte stream.
  *
  * The function begins by dynamically allocating memory for an array of pointers to tiled2saturn_collision_t structures, with the number of elements equal to the size parameter.
@@ -243,6 +288,13 @@ tiled2saturn_t* tiled2saturn_parse(uint8_t* bytes) {
         layer_offset += saturn_map->layers[i]->layer_size;
     }
 
+    size_t bitmap_layer_offset = saturn_map->header->bitmap_layer_offset;
+    saturn_map->bitmap_layers = (tiled2saturn_bitmap_layer_t**)malloc(sizeof(tiled2saturn_bitmap_layer_t*) * saturn_map->header->bitmap_layer_count);
+    for(uint8_t i = 0; i<saturn_map->header->bitmap_layer_count; i++){
+        saturn_map->bitmap_layers[i] = parse_bitmap_layer(bytes, bitmap_layer_offset);
+        bitmap_layer_offset += saturn_map->bitmap_layers[i]->layer_size;
+    }
+
     size_t collision_offset = saturn_map->header->collision_offset;
     uint32_t count = saturn_map->header->width * saturn_map->header->height;
     saturn_map->collisions =  parse_collision(bytes, collision_offset, count);
@@ -269,6 +321,11 @@ void tiled2saturn_free(tiled2saturn_t* tiled2saturn){
         }
         
         free(tiled2saturn->collisions[i]);
+    }
+
+    for (uint8_t i = 0; i < tiled2saturn->header->bitmap_layer_count; i++) {
+        free(tiled2saturn->bitmap_layers[i]->bitmap);
+        free(tiled2saturn->bitmap_layers[i]);
     }
 
     for (uint8_t i = 0; i < tiled2saturn->header->layer_count; i++) {
@@ -306,6 +363,32 @@ tiled2saturn_layer_t* get_layer_by_id(tiled2saturn_t* self, uint32_t id){
     for(uint8_t i = 0; i < self->header->layer_count; i++){
         if(self->layers[i]->id == id){
             return self->layers[i];
+        }
+    }
+
+    return NULL;
+}
+
+/**
+ * @brief Retrieve a Tiled2Saturn bitmap layer by its ID.
+ *
+ * This function searches for a Tiled2Saturn bitmap layer with the specified ID within a Tiled2Saturn map and returns
+ * a pointer to the bitmap layer if found. If no bitmap layer with the specified ID is found, it returns NULL.
+ *
+ * @param self Pointer to the `tiled2saturn_t` structure representing the Tiled2Saturn map to search within.
+ * @param id The ID of the bitmap layer to retrieve.
+ *
+ * @return A pointer to the `tiled2saturn_bitmap_layer_t` structure representing the found layer, or NULL if the bitmap 
+ *         layer with the specified ID was not found.
+ *
+ * @note This function assumes that the input Tiled2Saturn map structure (`tiled2saturn_t`) is valid and contains
+ *       a valid array of layers. If the map is not properly initialized, using this function may result in
+ *       undefined behavior.
+ */
+tiled2saturn_bitmap_layer_t* get_bitmap_layer_by_id(tiled2saturn_t* self, uint32_t id){
+    for(uint8_t i = 0; i < self->header->bitmap_layer_count; i++){
+        if(self->bitmap_layers[i]->id == id){
+            return self->bitmap_layers[i];
         }
     }
 

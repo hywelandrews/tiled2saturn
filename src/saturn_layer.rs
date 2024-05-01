@@ -170,22 +170,20 @@ impl SaturnLayer {
 
         let mut index = 1_usize;
         
-        for tile_layer_with_id in tile_layers.iter() {
-            let id = tile_layer_with_id.0;
-            let tile_layer = &tile_layer_with_id.1;
+        for (id, tile_layer) in tile_layers.iter() {
             let width = tile_layer.width().ok_or(format!("Unable to get width for layer {}", id))?;
             let height = tile_layer.height().ok_or(format!("Unable to get height for layer {}", id))?;
             
-            let tileset_index = tileset_index_for_layer(height, width, &tile_layer)?;
-            let tile_flip_enabled = tile_flip_enabled(height, width, &tile_layer);
+            let tileset_index = tileset_index_for_layer(height, width, tile_layer)?;
+            let tile_flip_enabled = tile_flip_enabled(height, width, tile_layer);
 
             let previous_layers = tile_layers.iter().take(index.saturating_sub(1));
 
             let tile_transparency_enabled = tile_transparency_enabled(height, width, previous_layers);
 
-            let mut saturn_layer = SaturnLayer::new(id, width, height, tileset_index, tile_flip_enabled, tile_transparency_enabled)?;
+            let mut saturn_layer = SaturnLayer::new(*id, width, height, tileset_index, tile_flip_enabled, tile_transparency_enabled)?;
 
-            let pattern_data = &mut SaturnLayer::get_pattern_name_data(&saturn_layer, &tile_layer, &tilesets)?;
+            let pattern_data = &mut SaturnLayer::get_pattern_name_data(&saturn_layer, tile_layer, &tilesets)?;
             saturn_layer.pattern_name_data.append(pattern_data);
             saturn_layer.update().map_err(|op| op.to_string())?;
 
