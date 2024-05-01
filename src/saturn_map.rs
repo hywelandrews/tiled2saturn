@@ -72,9 +72,10 @@ impl SaturnMap {
         let layer_count = u8::try_from(layers.len()).map_err(|e| e.to_string())?;
         let layers_size: u32 = layers.iter().map(|f| f.layer_size).sum();
 
-        let bitmap_layers = SaturnBitmapLayer::build(map.layers())?;
+        let bitmap_layers = SaturnBitmapLayer::build(map.layers(), words_per_pallate)?;
         let bitmap_layer_count = u8::try_from(bitmap_layers.len()).map_err(|e| e.to_string())?;
         let bitmap_layers_size = bitmap_layers.iter().map(|f| f.layer_size).sum();
+
         let collisions = SaturnCollision::build(width, height, map.layers())?;
         
         let mut header = SaturnMapHeader::new(width, height, tileset_count, tilesets_size, 

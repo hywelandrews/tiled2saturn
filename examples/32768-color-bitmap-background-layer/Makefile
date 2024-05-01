@@ -14,9 +14,9 @@ include $(YAUL_INSTALL_ROOT)/share/build.tga.mk
 BUILTIN_ASSETS+= \
 	assets/data.bin;layer1
 
-SH_PROGRAM:= 32768-bitmap-background-layer
+SH_PROGRAM:= 32768-color-bitmap-background-layer
 SH_SRCS:= \
-	32768-bitmap-background-layer.c
+	32768-color-bitmap-background-layer.c
 
 # We explicitly set the sh2 root header files to help clang generation
 SH_CFLAGS+= -I$(YAUL_INSTALL_ROOT)/$(YAUL_ARCH_SH_PREFIX)/include

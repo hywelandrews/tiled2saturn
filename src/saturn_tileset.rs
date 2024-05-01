@@ -61,7 +61,7 @@ impl SaturnTileset {
         return Ok(result);
     }
 
-    fn get_pallette_data_32(self:&SaturnTileset, color_table: &SaturnColorTable) -> Result<Vec<u32>, String> {
+    fn get_pallette_data_32(color_table: &SaturnColorTable) -> Result<Vec<u32>, String> {
         let mut results: Vec<u32> = Vec::default();
 
         for i in 0..color_table.len(){
@@ -72,7 +72,7 @@ impl SaturnTileset {
         return Ok(results);
     }
 
-    fn get_pallette_data_16(self:&SaturnTileset, color_table: &SaturnColorTable) -> Result<Vec<u16>, String> {
+    fn get_pallette_data_16(color_table: &SaturnColorTable) -> Result<Vec<u16>, String> {
         let mut results: Vec<u16> = Vec::default();
 
         for i in 0..color_table.len() as u32{
@@ -213,10 +213,10 @@ impl SaturnTileset {
             let mut saturn_tileset = SaturnTileset::new(tileset.tile_width, tileset.tile_height, tileset.tilecount, bpp, words_per_pallete, color_table.len() as u16)?;                                                              
 
             let mut pallete_data_bytes : Vec<u8> = if words_per_pallete == 1 {
-                let pallete_data = &mut SaturnTileset::get_pallette_data_16(&saturn_tileset, color_table)?;
+                let pallete_data = &mut SaturnTileset::get_pallette_data_16(color_table)?;
                 pallete_data.iter().flat_map(|val| val.to_be_bytes()).collect()
             } else {
-                let pallete_data = &mut SaturnTileset::get_pallette_data_32(&saturn_tileset, color_table)?;
+                let pallete_data = &mut SaturnTileset::get_pallette_data_32(color_table)?;
                 pallete_data.iter().flat_map(|val| val.to_be_bytes()).collect()
             };
 
