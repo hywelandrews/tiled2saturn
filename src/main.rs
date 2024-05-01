@@ -8,6 +8,7 @@ mod saturn_map;
 mod saturn_tileset;
 mod saturn_color_table;
 mod saturn_layer;
+mod saturn_bitmap_layer;
 mod saturn_collisions;
 
 use deku::prelude::*;

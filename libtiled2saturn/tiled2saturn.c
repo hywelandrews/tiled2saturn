@@ -35,7 +35,7 @@ static tiled2saturn_header_t* parse_header(uint8_t* bytes){
     uint32_t magic = LONG(bytes, 0);  //4 0-3
     assert(magic == 0x894D4150);
     header->version = LONG(bytes, 4); //4 4-7 
-    assert(header->version == 2);
+    assert(header->version == 3);
     header->width = LONG(bytes, 8);   //4 8-11
     assert((header->width % 8) == 0);
     header->height = LONG(bytes, 12); //4 12-15
@@ -48,7 +48,11 @@ static tiled2saturn_header_t* parse_header(uint8_t* bytes){
     assert(header->layer_count > 0);
     header->layer_offset = LONG(bytes, 22); //4 22-25
     assert(header->layer_offset > 0);
-    header->collision_offset = LONG(bytes, 26); //4 26-29
+    header->bitmap_layer_count = BYTE(bytes, 26); //1 26
+    assert(header->bitmap_layer_count > 0);
+    header->bitmap_layer_offset = LONG(bytes, 27); //4 27-30
+    assert(header->bitmap_layer_offset > 0);
+    header->collision_offset = LONG(bytes, 31); // 4 31 - 34
     assert(header->collision_offset > 0);
     return header; 
 }
@@ -153,6 +157,26 @@ static tiled2saturn_layer_t* parse_layer(uint8_t* bytes, uint32_t offset, tiled2
     return layer;
 }
 
+static tiled2saturn_bitmap_layer_t* parse_bitmap_layer(uint8_t* bytes, uint32_t offset){
+    tiled2saturn_bitmap_layer_t* bitmap_layer = (tiled2saturn_bitmap_layer_t*)malloc(sizeof(tiled2saturn_bitmap_layer_t));
+    bitmap_layer->id = LONG(bytes, offset); // 35 - 38
+    assert(bitmap_layer->id != 0);
+    bitmap_layer->layer_size = LONG(bytes, offset+4); // 39 - 42
+    assert(bitmap_layer->layer_size > 0);
+    bitmap_layer->layer_width = LONG(bytes, offset+8); // 43 - 46
+    assert(bitmap_layer->layer_width > 0);
+    bitmap_layer->layer_height = LONG(bytes, offset+12); // 47 - 50  
+    assert(bitmap_layer->layer_height > 0);
+  
+    bitmap_layer->bitmap_size = LONG(bytes, offset+16); // 51 - 54
+    assert(bitmap_layer->bitmap_size > 0);
+
+    bitmap_layer->bitmap = (uint8_t*)malloc(bitmap_layer->bitmap_size);
+    memcpy(bitmap_layer->bitmap, bytes+offset+20, bitmap_layer->bitmap_size);
+
+    return bitmap_layer;
+}
+
 /**
  * @brief Parse a collision set from a byte stream.
  *
@@ -241,6 +265,13 @@ tiled2saturn_t* tiled2saturn_parse(uint8_t* bytes) {
     for(uint8_t i = 0; i<saturn_map->header->layer_count; i++){
         saturn_map->layers[i] = parse_layer(bytes, layer_offset, saturn_map->tilesets);
         layer_offset += saturn_map->layers[i]->layer_size;
+    }
+
+    size_t bitmap_layer_offset = saturn_map->header->bitmap_layer_offset;
+    saturn_map->bitmap_layers = (tiled2saturn_bitmap_layer_t**)malloc(sizeof(tiled2saturn_bitmap_layer_t*) * saturn_map->header->bitmap_layer_count);
+    for(uint8_t i = 0; i<saturn_map->header->bitmap_layer_count; i++){
+        saturn_map->bitmap_layers[i] = parse_bitmap_layer(bytes, bitmap_layer_offset);
+        bitmap_layer_offset += saturn_map->bitmap_layers[i]->layer_size;
     }
 
     size_t collision_offset = saturn_map->header->collision_offset;

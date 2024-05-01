@@ -5,13 +5,7 @@ use embedded_graphics::{
 
 /// Color table.
 ///
-/// This struct provides access to the color table in a BMP file. Use
-///
-/// Accessing the color table directly isn't necessary if images are drawn to an
-/// [`embedded_graphics`] [`DrawTarget`](embedded_graphics::draw_target::DrawTarget). The conversion
-/// of color indices to actual colors will be handled by [`Bmp`].
-///
-/// [`Bmp`]: crate::Bmp
+/// This struct provides access to the color table.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SaturnColorTable {
     data: Vec<u32>,
@@ -35,8 +29,6 @@ impl<'a> SaturnColorTable {
     ///
     /// `None` is returned if `index` is out of bounds.
     pub fn get(&self, index: u32) -> Option<Rgb888> {
-        // MSRV: Experiment with slice::as_chunks when it's stabilized
-
         let offset = index as usize;
         let raw = self.data.get(offset)?;
 
