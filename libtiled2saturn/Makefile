@@ -33,10 +33,15 @@ SH_CFLAGS_shared:= \
 	-s
 
 SH_CFLAGS:= \
+	-O2 \
+	-I$(YAUL_INSTALL_ROOT)/$(YAUL_ARCH_SH_PREFIX)/include \
 	-std=c11 \
 	-Wbad-function-cast \
 	-Wfatal-errors \
 	$(SH_CFLAGS_shared)
+
+install-debug: SH_CFLAGS += -DDEBUG
+install-debug: install
 
 install: install-lib
 	mkdir -p $(YAUL_INSTALL_ROOT)/$(YAUL_ARCH_SH_PREFIX)/include/tiled2saturn
