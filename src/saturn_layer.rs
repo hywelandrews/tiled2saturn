@@ -72,6 +72,14 @@ impl SaturnLayer {
                                     in_val as u16 & 0x3ff
                                 } else {0};
                             
+                            //  current_tile_index - this is the tileset count we are currently at given all previous tilesets that exist - unless our tile is transparent, increment by index
+                            if tile_id != u32::MAX {
+                                out_val += current_tile_index; 
+                            }
+
+                            // add the palette bank for this number of colors
+                            out_val |= (tileset.palette_bank as u16) << 12;
+
                             // is tile horizontally flipped?
                             if flip_horizontal {
                                 out_val |= 0x400;
@@ -81,23 +89,22 @@ impl SaturnLayer {
                                 out_val |= 0x800;
                             }
                             
-                            //  current_tile_index - this is the tileset count we are currently at given all previous tilesets that exist - unless our tile is transparent, increment by index
-                            if tile_id != u32::MAX {
-                                out_val += current_tile_index; 
-                            }
-                            
                             results.append(&mut out_val.to_be_bytes().to_vec());
                         } else {
                             let mut out_val = (in_val & 0x7fff) << 1;
-                    
+                            
+                            // add the palette bank for this number of colors
+                            out_val |= (tileset.palette_bank as u32) << 16;
+
                             // is tile horizontally flipped?
                             if flip_horizontal {
                                 out_val |= 0x40000000;
                             }
                             // is tile vertically flipped?
-                            if flip_vertical { // Is this a bug from original satconv? verify.
-                                out_val |= 0x40000000;
+                            if flip_vertical { 
+                                out_val |= 0x80000000;
                             }
+
                             results.append(&mut out_val.to_be_bytes().to_vec());
                         }
                     }

@@ -23,6 +23,7 @@ typedef struct tiled2saturn_tileset {
     uint16_t bpp;
     uint8_t  words_per_palette;
     uint16_t number_of_colors;
+    uint8_t  palette_bank;
     uint32_t palette_size;
     uint8_t* palette;
     uint32_t character_pattern_size;

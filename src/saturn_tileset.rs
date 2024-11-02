@@ -1,6 +1,6 @@
-use std::{sync::Arc, fs::{self}, collections::{HashSet, HashMap, BTreeMap}};
+use std::{collections::{BTreeMap, HashMap, HashSet}, fmt::Debug, fs::{self}, sync::Arc};
 
-use tiled::Tileset;
+use tiled::{PropertyValue, Tileset};
 use embedded_graphics::pixelcolor::{RgbColor, IntoStorage};
 use deku::prelude::*;
 use tinybmp::RawBmp;
@@ -18,10 +18,11 @@ pub struct SaturnTileset {
     pub bpp: u16,
     pub words_per_pallete: u8,
     number_of_colors: u16,
-    #[deku(update = "self.palatte.len()")]
-    pub palatte_size: u32,
-    #[deku(count = "palatte_size", endian = "big")]
-    palatte: Vec<u8>,
+    pub palette_bank: u8,
+    #[deku(update = "self.palette.len()")]
+    pub palette_size: u32,
+    #[deku(count = "palette_size", endian = "big")]
+    palette: Vec<u8>,
     #[deku(update = "self.character_pattern.len()")]
     pub character_pattern_size: u32,
     #[deku(count = "character_pattern_size", endian = "big")]
@@ -29,7 +30,7 @@ pub struct SaturnTileset {
 }
 
 impl SaturnTileset {
-    fn new(tile_width: u32, tile_height: u32, tile_count: u32, bpp: u16, words_per_pallete: u8, number_of_colors:u16) -> Result<Self, String> {
+    fn new(tile_width: u32, tile_height: u32, tile_count: u32, bpp: u16, words_per_pallete: u8, number_of_colors:u16, palette_bank:u8) -> Result<Self, String> {
         Ok(SaturnTileset {
             tileset_size: Default::default(),
             tile_width,
@@ -38,8 +39,9 @@ impl SaturnTileset {
             bpp,
             number_of_colors,
             words_per_pallete,
-            palatte_size: Default::default(),
-            palatte: Default::default(),
+            palette_size: Default::default(),
+            palette: Default::default(),
+            palette_bank,
             character_pattern_size: Default::default(),
             character_pattern: Default::default()
         })
@@ -167,7 +169,7 @@ impl SaturnTileset {
     }
 
     fn get_indexed_image<'a>(indexed_palette: &HashMap<u32, u32>, data: &RawBmp) -> Vec<u32> {
-        let indexed_image = data.color_table().map_or_else(
+        let indexed_image: Vec<u32> = data.color_table().map_or_else(
          ||data.pixels().into_iter().map(|f| *indexed_palette.get(&f.color).unwrap()).collect(),
         |ct| data.pixels().into_iter().map(|f| *indexed_palette.get(&ct.get(f.color).unwrap().into_storage()).unwrap()).collect()
         );
@@ -175,11 +177,11 @@ impl SaturnTileset {
     }
 
     fn get_indexed_palette(data: &RawBmp) -> HashMap<u32, u32>{
-        let palette:HashSet<u32> = data.color_table().map_or_else(
-            || HashSet::from_iter(data.pixels().map(|p| p.color).into_iter()), 
-            |ct|HashSet::from_iter(data.pixels().map(|p| ct.get(p.color).unwrap().into_storage()).into_iter())
+         let palette:Vec<u32> = data.color_table().map_or_else(
+          || Vec::from_iter::<HashSet<u32>>(HashSet::from_iter(data.pixels().map(|p| p.color).into_iter())), 
+          |ct|Vec::from_iter((0..ct.len() as u32).map(|i| ct.get(i).unwrap().into_storage()))
         );
-        let indexed_palette: HashMap<u32, u32> = palette.iter().cloned().zip((0..palette.len() as u32).into_iter()).collect();
+        let indexed_palette:HashMap<u32, u32>= palette.iter().cloned().zip((0..palette.len() as u32).into_iter()).collect();
         return indexed_palette;
     }
 
@@ -188,13 +190,23 @@ impl SaturnTileset {
         return SaturnColorTable::new(sorted.clone().into_values().collect()); 
     }
 
-    fn get_bpp(indexed_palette: &HashMap<u32, u32>) -> Result<u16, String> {
+    fn get_number_of_colors(indexed_palette: &HashMap<u32, u32>) -> Result<u16, String> {
         return match indexed_palette.len() {
-            16 => Ok(4),
-            256 => Ok(8),
+            1..=16      => Ok(16),
+            17..=256    => Ok(256),
+            257..=1024  => Ok(1024),
+            1025..=2048 => Ok(2048),
+            _ => Err(format!("Unsupported color table length {}", indexed_palette.len()))
+        }
+    }
+
+    fn get_bpp(number_of_colors:u16) -> Result<u16, String> {
+        return match number_of_colors {
+            16   => Ok(4),
+            256  => Ok(8),
             1024 => Ok(11),
             2048 => Ok(11),
-            _ => Err(format!("Unsupported color table length {}", indexed_palette.len()))
+            _ => Err(format!("Unsupported number of colors {}", number_of_colors))
         }
     }
 
@@ -207,11 +219,18 @@ impl SaturnTileset {
             let raw_bmp = RawBmp::from_slice(&image_file).map_err(|op| format!("{:?}", op))?;
             let indexed_palette = &SaturnTileset::get_indexed_palette(&raw_bmp);
             let indexed_image = SaturnTileset::get_indexed_image(indexed_palette, &raw_bmp);
+            let number_of_colors = SaturnTileset::get_number_of_colors(indexed_palette)?;
+            let bpp = SaturnTileset::get_bpp(number_of_colors)?;
             let color_table = &SaturnTileset::get_color_table(indexed_palette);
-            let bpp = SaturnTileset::get_bpp(indexed_palette)?;
-            
-            let mut saturn_tileset = SaturnTileset::new(tileset.tile_width, tileset.tile_height, tileset.tilecount, bpp, words_per_pallete, color_table.len() as u16)?;                                                              
+            let property_value = tileset.properties.get("palette_bank").ok_or("No palette_bank property found for tileset")?;
+            let palette_bank : u8  = match property_value  {
+                PropertyValue::IntValue(s) => *s as u8,
+                PropertyValue::StringValue(c) => c.parse().map_err(|e| format!("Invalid palette bank {:?}", e))?,
+                _ => 0
+            };
 
+            let mut saturn_tileset = SaturnTileset::new(tileset.tile_width, tileset.tile_height, tileset.tilecount, bpp, words_per_pallete, number_of_colors, palette_bank)?;                                                              
+ 
             let mut pallete_data_bytes : Vec<u8> = if words_per_pallete == 1 {
                 let pallete_data = &mut SaturnTileset::get_pallette_data_16(color_table)?;
                 pallete_data.iter().flat_map(|val| val.to_be_bytes()).collect()
@@ -220,7 +239,7 @@ impl SaturnTileset {
                 pallete_data.iter().flat_map(|val| val.to_be_bytes()).collect()
             };
 
-            saturn_tileset.palatte.append(&mut pallete_data_bytes);
+            saturn_tileset.palette.append(&mut pallete_data_bytes);
 
             let character_pattern_data = &mut SaturnTileset::get_character_pattern_data(&saturn_tileset, indexed_image, image.width, image.height)?;
             saturn_tileset.character_pattern.append(character_pattern_data);
@@ -229,7 +248,7 @@ impl SaturnTileset {
 
             results.push(saturn_tileset);
         }
-
+        
         return Ok(results);
     }
 }

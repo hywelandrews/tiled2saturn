@@ -17,7 +17,7 @@
  * It performs validation checks on some fields and returns a dynamically allocated structure containing 
  * the parsed header data.
  *
- * @param raw_bytes Pointer to the byte stream containing the Tiled2Saturn header.
+ * @param bytes Pointer to the byte stream containing the Tiled2Saturn header.
  *
  * @return A dynamically allocated `tiled2saturn_header_t` structure containing the parsed header.
  *         The caller is responsible for freeing this memory when it is no longer needed using `free()`.
@@ -35,23 +35,33 @@ static tiled2saturn_header_t* parse_header(uint8_t* bytes){
     uint32_t magic = LONG(bytes, 0);  //4 0-3
     assert(magic == 0x894D4150);
     header->version = LONG(bytes, 4); //4 4-7 
-    assert(header->version == 3);
+    assert(header->version == 4);
     header->width = LONG(bytes, 8);   //4 8-11
     assert((header->width % 8) == 0);
     header->height = LONG(bytes, 12); //4 12-15
     assert((header->height % 8) == 0);
+
     header->tileset_count = BYTE(bytes, 16); //1 16
-    assert(header->tileset_count > 0);
-    header->tileset_offset = LONG(bytes, 17); //4 17-20
-    assert(header->tileset_offset > 0);
+
+    if(header->tileset_count > 0){
+        header->tileset_offset = LONG(bytes, 17); //4 17-20
+        assert(header->tileset_offset > 0);
+    }
+
     header->layer_count = BYTE(bytes, 21); //1 21
-    assert(header->layer_count > 0);
-    header->layer_offset = LONG(bytes, 22); //4 22-25
-    assert(header->layer_offset > 0);
+    
+    if(header->layer_count > 0){
+        header->layer_offset = LONG(bytes, 22); //4 22-25
+        assert(header->layer_offset > 0);
+    }
+
     header->bitmap_layer_count = BYTE(bytes, 26); //1 26
-    assert(header->bitmap_layer_count > 0);
-    header->bitmap_layer_offset = LONG(bytes, 27); //4 27-30
-    assert(header->bitmap_layer_offset > 0);
+    
+    if(header->bitmap_layer_count > 0){
+        header->bitmap_layer_offset = LONG(bytes, 27); //4 27-30
+        assert(header->bitmap_layer_offset > 0);
+    }
+    
     header->collision_offset = LONG(bytes, 31); // 4 31 - 34
     assert(header->collision_offset > 0);
     return header; 
@@ -93,16 +103,17 @@ static tiled2saturn_tileset_t* parse_tileset(uint8_t* bytes, uint32_t offset){
     assert(tileset->words_per_palette == 1 || tileset->words_per_palette == 2);
     tileset->number_of_colors = SHORT(bytes, offset + 19); //2 44-45
     assert(tileset->number_of_colors == 16 || tileset->number_of_colors == 256 || tileset->number_of_colors == 1024 || tileset->number_of_colors == 2048);
-
-    tileset->palette_size = LONG(bytes, offset + 21); //4 44-47
+    tileset->palette_bank = BYTE(bytes, offset + 21); //2 44-45
+    
+    tileset->palette_size = LONG(bytes, offset + 22); //4 44-47
     assert(tileset->palette_size > 0);
     tileset->palette = (uint8_t*)malloc(tileset->palette_size);
-    memcpy(tileset->palette, bytes+offset+25, tileset->palette_size);
+    memcpy(tileset->palette, bytes+offset+26, tileset->palette_size);
 
-    tileset->character_pattern_size = LONG(bytes, tileset->palette_size+offset+25); //4 48-51
+    tileset->character_pattern_size = LONG(bytes, tileset->palette_size+offset+26); //4 48-51
     assert(tileset->character_pattern_size > 0);
     tileset->character_pattern = (uint8_t*)malloc(tileset->character_pattern_size);
-    memcpy(tileset->character_pattern, bytes+tileset->palette_size+offset+29, tileset->character_pattern_size);
+    memcpy(tileset->character_pattern, bytes+tileset->palette_size+offset+30, tileset->character_pattern_size);
 
     return tileset;
 }
