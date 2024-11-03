@@ -38,11 +38,9 @@ fn main() {
 
     match matches.subcommand() {
         Some(("extract", sub_matches)) => {
-            let pallete_size = *sub_matches.get_one::<u8>("WORDS").expect("Pallete word size is required");
             let filename = sub_matches.get_one::<String>("TMX_FILE").expect("TMX file to process is required");
-            println!("Extracting {} with pallete word size {}", filename, pallete_size);
             let tmx_file = load_tmx(filename);
-            let saturn_map = SaturnMap::build(tmx_file, pallete_size);
+            let saturn_map = SaturnMap::build(tmx_file);
 
             let map_bytes = match saturn_map {
                 Ok(map) => map.to_bytes().map_err(|err| err.to_string()),

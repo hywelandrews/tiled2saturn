@@ -33,7 +33,7 @@ IP_1ST_READ_SIZE:= 0
 include $(YAUL_INSTALL_ROOT)/share/build.post.iso-cue.mk
 
 assets/data.bin: resources/1024colors.bmp resources/1024_color_layer.tmx
-	$(ECHO)cd resources; tiled2saturn extract -w 1 1024_color_layer.tmx
+	$(ECHO)cd resources; tiled2saturn extract 1024_color_layer.tmx
 	$(ECHO)mv resources/data.bin assets/data.bin
 
 .PHONY: .clean-assets

@@ -33,7 +33,7 @@ IP_1ST_READ_SIZE:= 0
 include $(YAUL_INSTALL_ROOT)/share/build.post.iso-cue.mk
 
 assets/data.bin: resources/landscape_512x512_16.bmp resources/landscape.tmx
-	$(ECHO)cd resources; tiled2saturn extract -w 1 landscape.tmx
+	$(ECHO)cd resources; tiled2saturn extract landscape.tmx
 	$(ECHO)mv resources/data.bin assets/data.bin
 
 .PHONY: .clean-assets

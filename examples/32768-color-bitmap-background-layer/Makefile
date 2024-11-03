@@ -36,7 +36,7 @@ IP_1ST_READ_SIZE:= 0
 include $(YAUL_INSTALL_ROOT)/share/build.post.iso-cue.mk
 
 assets/data.bin: resources/castle.bmp resources/castle.tmx
-	$(ECHO)cd resources; tiled2saturn extract -w 1 castle.tmx
+	$(ECHO)cd resources; tiled2saturn extract castle.tmx
 	$(ECHO)mv resources/data.bin assets/data.bin
 
 .PHONY: .clean-assets
