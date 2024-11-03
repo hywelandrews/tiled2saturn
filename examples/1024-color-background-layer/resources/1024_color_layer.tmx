@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.8" tiledversion="1.8.6" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="16" tileheight="16" infinite="0" nextlayerid="2" nextobjectid="1">
  <tileset firstgid="1" name="1024colors_small" tilewidth="16" tileheight="16" tilecount="256" columns="16">
+  <properties>
+   <property name="palette_bank" type="int" value="0"/>
+   <property name="pnd_size" type="int" value="1"/>
+  </properties>
   <image source="1024colors.bmp" width="256" height="256"/>
  </tileset>
  <layer id="1" name="1024_color_layer" width="32" height="32">

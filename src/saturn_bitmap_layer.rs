@@ -2,7 +2,7 @@ use std::fs;
 
 use deku::prelude::*;
 use embedded_graphics::pixelcolor::{RgbColor, Bgr888};
-use tiled::{ImageLayer, Layer};
+use tiled::{ImageLayer, Layer,PropertyValue};
 use tinybmp::{Bmp, Pixels};
 
 #[repr(C)]
@@ -58,25 +58,38 @@ impl SaturnBitmapLayer {
         return Ok(results);
     }
 
-    pub fn build<'a>(layers: impl ExactSizeIterator<Item = Layer<'a>>, words_per_pallete: u8) -> Result<Vec<Self>, String> {
+    fn get_words_per_palette<'a>(layer:&Layer<'a>) -> Result<u8, String> {
+        let words_per_palette_property_value = layer.properties.get("pnd_size").ok_or("No pnd_size property found for tileset")?;
+        let words_per_palette : u8  = match words_per_palette_property_value  {
+            PropertyValue::IntValue(s) => *s as u8,
+            PropertyValue::StringValue(c) => c.parse().map_err(|e| format!("Invalid pnd_size {:?}", e))?,
+            _ => Err("Invalid pnd_size")?
+        };
+
+        Ok(words_per_palette)
+    }
+
+    pub fn build<'a>(layers: impl ExactSizeIterator<Item = Layer<'a>>) -> Result<Vec<Self>, String> {
         let mut results: Vec<SaturnBitmapLayer> = Vec::default();
 
-        let bitmap_layers: Vec<(u32, ImageLayer)> = layers.filter_map(|layer| match layer.layer_type() {
-            tiled::LayerType::Image(image_layer) => Some((layer.id(), image_layer)),
+        let bitmap_layers: Vec<(Layer<'a>, ImageLayer)> = layers.filter_map(|layer| match layer.layer_type() {
+            tiled::LayerType::Image(image_layer) => Some((layer, image_layer)),
             _ => None,
         }).collect();
 
-        for (id, image_layer) in bitmap_layers.iter() {
+        for (layer, image_layer) in bitmap_layers.iter() {
+            let id = layer.id();
             let image = image_layer.image.as_ref();
             let width = image.map(|i| i.width).filter(|i| *i == 512 || *i == 1024).ok_or(format!("Unable to get valid width for layer {}", id))?;
             let height = image.map(|i| i.height).filter(|i| *i == 256 || *i == 512).ok_or(format!("Unable to get valid height for layer {}", id))?;
             let source = image.map(|i| i.source.clone()).ok_or(format!("Unable to get source for layer {}", id))?;
             let image_file = fs::read(source.as_path()).map_err(|op| op.to_string() + " " + source.as_path().to_str().unwrap())?;
             let bmp = Bmp::<Bgr888>::from_slice(&image_file).map_err(|op| format!("{:?}", op))?;
+            let words_per_palette = SaturnBitmapLayer::get_words_per_palette(layer)?;
 
             let iter = bmp.pixels().into_iter();
             
-            let bitmap_data_bytes: Vec<u8> = if words_per_pallete == 1 {
+            let bitmap_data_bytes: Vec<u8> = if words_per_palette == 1 {
                 let bitmap_data = SaturnBitmapLayer::get_pallette_data_16(iter)?;
                 bitmap_data.iter().flat_map(|val| val.to_be_bytes()).collect()
             } else {
@@ -84,7 +97,7 @@ impl SaturnBitmapLayer {
                 bitmap_data.iter().flat_map(|val| val.to_be_bytes()).collect()
             };
 
-           let mut saturn_bitmap_layer = SaturnBitmapLayer::new(*id, width as u32, height as u32, bitmap_data_bytes)?;
+           let mut saturn_bitmap_layer = SaturnBitmapLayer::new(id, width as u32, height as u32, bitmap_data_bytes)?;
 
             saturn_bitmap_layer.update().map_err(|op| op.to_string())?;
             results.push(saturn_bitmap_layer);

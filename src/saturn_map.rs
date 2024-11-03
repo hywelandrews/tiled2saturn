@@ -60,11 +60,11 @@ pub struct SaturnMap {
 }
 
 impl SaturnMap {
-    pub fn build(map: Map, words_per_pallete: u8) -> Result<SaturnMap, String> {
+    pub fn build(map: Map) -> Result<SaturnMap, String> {
         let width = map.width;
         let height = map.height;
 
-        let tilesets = SaturnTileset::build(map.tilesets(), words_per_pallete)?;
+        let tilesets = SaturnTileset::build(map.tilesets())?;
         let tileset_count = u8::try_from(tilesets.len()).map_err(|e| e.to_string())?;
         let tilesets_size: u32 = tilesets.iter().map(|f| f.tileset_size).sum();
 
@@ -72,7 +72,7 @@ impl SaturnMap {
         let layer_count = u8::try_from(layers.len()).map_err(|e| e.to_string())?;
         let layers_size: u32 = layers.iter().map(|f| f.layer_size).sum();
 
-        let bitmap_layers = SaturnBitmapLayer::build(map.layers(), words_per_pallete)?;
+        let bitmap_layers = SaturnBitmapLayer::build(map.layers())?;
         let bitmap_layer_count = u8::try_from(bitmap_layers.len()).map_err(|e| e.to_string())?;
         let bitmap_layers_size = bitmap_layers.iter().map(|f| f.layer_size).sum();
 

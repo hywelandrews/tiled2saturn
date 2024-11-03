@@ -16,7 +16,7 @@ pub struct SaturnTileset {
     pub tile_height: u32,
     pub tile_count: u32,
     pub bpp: u16,
-    pub words_per_pallete: u8,
+    pub words_per_palette: u8,
     number_of_colors: u16,
     pub palette_bank: u8,
     #[deku(update = "self.palette.len()")]
@@ -30,7 +30,7 @@ pub struct SaturnTileset {
 }
 
 impl SaturnTileset {
-    fn new(tile_width: u32, tile_height: u32, tile_count: u32, bpp: u16, words_per_pallete: u8, number_of_colors:u16, palette_bank:u8) -> Result<Self, String> {
+    fn new(tile_width: u32, tile_height: u32, tile_count: u32, bpp: u16, words_per_palette: u8, number_of_colors:u16, palette_bank:u8) -> Result<Self, String> {
         Ok(SaturnTileset {
             tileset_size: Default::default(),
             tile_width,
@@ -38,7 +38,7 @@ impl SaturnTileset {
             tile_count,
             bpp,
             number_of_colors,
-            words_per_pallete,
+            words_per_palette,
             palette_size: Default::default(),
             palette: Default::default(),
             palette_bank,
@@ -210,7 +210,29 @@ impl SaturnTileset {
         }
     }
 
-    pub fn build(tilesets: &[Arc<Tileset>], words_per_pallete: u8) -> Result<Vec<Self>, String> {
+    fn get_palette_bank(tileset:&Arc<Tileset>) -> Result<u8, String> {
+        let palette_bank_property_value = tileset.properties.get("palette_bank").ok_or("No palette_bank property found for tileset")?;
+        let palette_bank : u8  = match palette_bank_property_value  {
+            PropertyValue::IntValue(s) => *s as u8,
+            PropertyValue::StringValue(c) => c.parse().map_err(|e| format!("Invalid palette bank {:?}", e))?,
+            _ => 0
+        };
+
+        Ok(palette_bank)
+    }
+
+    fn get_words_per_palette(tileset:&Arc<Tileset>) -> Result<u8, String> {
+        let words_per_palette_property_value = tileset.properties.get("pnd_size").ok_or("No pnd_size property found for tileset")?;
+        let words_per_palette : u8  = match words_per_palette_property_value  {
+            PropertyValue::IntValue(s) => *s as u8,
+            PropertyValue::StringValue(c) => c.parse().map_err(|e| format!("Invalid pnd_size {:?}", e))?,
+            _ => Err("Invalid pnd_size")?
+        };
+
+        Ok(words_per_palette)
+    }
+
+    pub fn build(tilesets: &[Arc<Tileset>]) -> Result<Vec<Self>, String> {
         let mut results: Vec<SaturnTileset> = Vec::default();
 
         for tileset in tilesets.iter() {
@@ -222,16 +244,12 @@ impl SaturnTileset {
             let number_of_colors = SaturnTileset::get_number_of_colors(indexed_palette)?;
             let bpp = SaturnTileset::get_bpp(number_of_colors)?;
             let color_table = &SaturnTileset::get_color_table(indexed_palette);
-            let property_value = tileset.properties.get("palette_bank").ok_or("No palette_bank property found for tileset")?;
-            let palette_bank : u8  = match property_value  {
-                PropertyValue::IntValue(s) => *s as u8,
-                PropertyValue::StringValue(c) => c.parse().map_err(|e| format!("Invalid palette bank {:?}", e))?,
-                _ => 0
-            };
+            let palette_bank = SaturnTileset::get_palette_bank(tileset)?;
+            let words_per_palette = SaturnTileset::get_words_per_palette(tileset)?;
 
-            let mut saturn_tileset = SaturnTileset::new(tileset.tile_width, tileset.tile_height, tileset.tilecount, bpp, words_per_pallete, number_of_colors, palette_bank)?;                                                              
+            let mut saturn_tileset = SaturnTileset::new(tileset.tile_width, tileset.tile_height, tileset.tilecount, bpp, words_per_palette, number_of_colors, palette_bank)?;                                                              
  
-            let mut pallete_data_bytes : Vec<u8> = if words_per_pallete == 1 {
+            let mut pallete_data_bytes : Vec<u8> = if words_per_palette == 1 {
                 let pallete_data = &mut SaturnTileset::get_pallette_data_16(color_table)?;
                 pallete_data.iter().flat_map(|val| val.to_be_bytes()).collect()
             } else {

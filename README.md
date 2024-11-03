@@ -3,7 +3,7 @@ tiled2saturn
 
 tiled2saturn converts between Tiled generated maps and Sega Saturn formats. This tool allows you to extract all components of a Tiled map (.tmx) and convert them into a single binary representation which can be parsed for use in Sega Saturn games.
 
-A C library provides functionality to parse and manipulate Tiled2Saturn map data. The library allows you to easily read  header, tilesets, layers and collision data from Tiled maps.
+A C library provides functionality to parse and manipulate Tiled2Saturn map data. The library allows you to easily read header, tilesets, layers and collision data from Tiled maps.
 
 Supported Features
 ------------------
@@ -17,7 +17,7 @@ Supported Features
 Prerequisites
 -------------
 
-Before using tiled2saturn, make sure you have the following prerequisites installed on your system:
+Before using tiled2saturn, make sure you have the following installed on your system:
 
 -   Rust > 1.74: You can download and install Rust from <https://www.rust-lang.org/tools/install>.
 
@@ -49,14 +49,17 @@ tiled2saturn provides a command-line interface with a single subcommand "extract
 
 -   `<TMX_FILE>` (Required): The path to the Tiled map (.tmx) file you want to extract.
 
-### Options
+### Configuration
 
--   `-w, --WORDS <WORDS>`: Palette word size (Required). The number of words to represent the palette.
+There are two custom configuration properties that need to be added to tilesets:
+
+`palette_bank` - bank number that PND data should reference, for 2048 color count images this should be 0 
+`pnd_size` - value is either 1 or 2 dending on PND format SCL_PN_10BIT or 2 word.
 
 ### Example
 
 ```bash
-tiled2saturn extract -w 1 path/to/map.tmx
+tiled2saturn extract path/to/map.tmx
 ```
 
 This command will extract the components of the specified Tiled map and convert them into a single binary representation. The resulting binary file will be named "data.bin" in the current working directory.
@@ -135,6 +138,5 @@ Acknowledgments
 
 -   Satconv (https://git.sr.ht/~ndiddy/satconv/tree): The original converter of map.tmx (Tiled XML) to .map files for Saturn
 -   Tiled (<https://www.mapeditor.org/>): Tiled is a popular open-source map editor that makes it easy to create and edit maps for various game engines.
--   Sega Saturn: The Sega Saturn was a gaming console released by Sega in the 1990s.
 
 If you encounter any issues or have suggestions for improvement, please open an issue on the project's GitHub repository.
