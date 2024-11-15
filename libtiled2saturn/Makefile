@@ -1,5 +1,5 @@
 ifeq ($(strip $(YAUL_INSTALL_ROOT)),)
-	$(error Undefined YAUL_INSTALL_ROOT (install root directory))
+  $(error Undefined YAUL_INSTALL_ROOT (install root directory))
 endif
 
 ifeq ($(strip $(YAUL_ARCH_SH_PREFIX)),)
