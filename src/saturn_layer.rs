@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use deku::prelude::*;
 use tiled::{Layer, TileLayer};
 
@@ -176,8 +178,10 @@ impl SaturnLayer {
         }
 
         let mut index = 1_usize;
+
+        let sorted: BTreeMap<&u32, &TileLayer<'_>> = tile_layers.iter().map(|(id, tl)| (id,tl)).collect();
         
-        for (id, tile_layer) in tile_layers.iter() {
+        for (id, tile_layer) in sorted {
             let width = tile_layer.width().ok_or(format!("Unable to get width for layer {}", id))?;
             let height = tile_layer.height().ok_or(format!("Unable to get height for layer {}", id))?;
             
