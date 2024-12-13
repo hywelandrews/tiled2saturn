@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -107,14 +108,11 @@ static tiled2saturn_tileset_t* parse_tileset(uint8_t* bytes, uint32_t offset){
     
     tileset->palette_size = LONG(bytes, offset + 22); //4 44-47
     assert(tileset->palette_size > 0);
-    tileset->palette = (uint8_t*)malloc(tileset->palette_size);
-    memcpy(tileset->palette, bytes+offset+26, tileset->palette_size);
+    tileset->palette = (uint8_t*)bytes+offset+26;
 
     tileset->character_pattern_size = LONG(bytes, tileset->palette_size+offset+26); //4 48-51
     assert(tileset->character_pattern_size > 0);
-    tileset->character_pattern = (uint8_t*)malloc(tileset->character_pattern_size);
-    memcpy(tileset->character_pattern, bytes+tileset->palette_size+offset+30, tileset->character_pattern_size);
-
+    tileset->character_pattern = (uint8_t *)bytes+tileset->palette_size+offset+30;
     return tileset;
 }
 
@@ -160,8 +158,7 @@ static tiled2saturn_layer_t* parse_layer(uint8_t* bytes, uint32_t offset, tiled2
     layer->pattern_name_data_size = LONG(bytes, offset+20); //4 75-78
     assert(layer->pattern_name_data_size > 0);
 
-    layer->pattern_name_data = (uint8_t*)malloc(layer->pattern_name_data_size);
-    memcpy(layer->pattern_name_data, bytes+offset+24, layer->pattern_name_data_size);
+    layer->pattern_name_data = (uint8_t*)bytes+offset+24;
 
     layer->tileset = tilesets[tileset_index];
 
@@ -203,8 +200,7 @@ static tiled2saturn_bitmap_layer_t* parse_bitmap_layer(uint8_t* bytes, uint32_t 
     bitmap_layer->bitmap_size = LONG(bytes, offset+16); // 51 - 54
     assert(bitmap_layer->bitmap_size > 0);
 
-    bitmap_layer->bitmap = (uint8_t*)malloc(bitmap_layer->bitmap_size);
-    memcpy(bitmap_layer->bitmap, bytes+offset+20, bitmap_layer->bitmap_size);
+    bitmap_layer->bitmap = (uint8_t*)bytes+offset+20;
 
     return bitmap_layer;
 }
@@ -317,7 +313,9 @@ tiled2saturn_t* tiled2saturn_parse(uint8_t* bytes) {
  * @brief Free the memory allocated for a Tiled2Saturn map and its components.
  *
  * This function deallocates the memory associated with a parsed Tiled2Saturn map, including its header, tilesets,
- * layers, and their respective components. It ensures proper cleanup of dynamically allocated memory to prevent memory leaks.
+ * layers, but not their respective components. It ensures proper cleanup of dynamically allocated memory to prevent memory 
+ * leaks in HWRAM. If you data.bin is located outside of the programs data area, this will not be freed, you must handle 
+ * this yourself.
  *
  * @param tiled2saturn Pointer to the `tiled2saturn_t` structure to be deallocated.
  *
@@ -335,18 +333,14 @@ void tiled2saturn_free(tiled2saturn_t* tiled2saturn){
     }
 
     for (uint8_t i = 0; i < tiled2saturn->header->bitmap_layer_count; i++) {
-        free(tiled2saturn->bitmap_layers[i]->bitmap);
         free(tiled2saturn->bitmap_layers[i]);
     }
 
     for (uint8_t i = 0; i < tiled2saturn->header->layer_count; i++) {
-        free(tiled2saturn->layers[i]->pattern_name_data);
         free(tiled2saturn->layers[i]);
     }
 
     for (uint8_t i = 0; i < tiled2saturn->header->tileset_count; i++) {
-        free(tiled2saturn->tilesets[i]->palette);
-        free(tiled2saturn->tilesets[i]->character_pattern);
         free(tiled2saturn->tilesets[i]);
     }
 

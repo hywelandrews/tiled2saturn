@@ -4,6 +4,7 @@ target/
 .cache/
 Cargo.lock
 build/
+assets/
 
 compile_commands.json
 **/*.[Bb][Ii][Nn]
