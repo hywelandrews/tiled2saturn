@@ -72,7 +72,10 @@ impl SaturnCollision {
                                     let height_narrow = height.round() as u8;
                                     let x_narrow = object_data.x.round() as u8;
                                     let y_narrow = object_data.y.round() as u8;
-                                    let points = vec![(x_narrow, y_narrow),(width_narrow, y_narrow), (width_narrow, height_narrow), (x_narrow, height_narrow)];
+                                    let points = vec![(x_narrow, y_narrow),
+                                                                     (width_narrow, y_narrow), 
+                                                                     (width_narrow, height_narrow), 
+                                                                     (x_narrow, height_narrow)];
                                     
                                     let mut solid = SaturnCollision::new(CollisionType::Rect, points)?;
                             
